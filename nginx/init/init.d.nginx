@@ -1,0 +1,87 @@
+#!/bin/bash
+
+#-----------------------------
+
+# nginx manage shell 
+
+#----------------------------
+
+NAME=nginx
+NGINX_BIN=/usr/local/nginx/sbin/${NAME}
+NGINX_CONIFG=/usr/local/nginx/conf/${NAME}.conf
+PID=/usr/local/nginx/logs/${NAME}.pid
+
+if [ -e /bin/ss ];then
+
+    statBin=/bin/ss
+else
+
+    statBin=/bin/netstat
+fi
+
+function config_test_fun(){
+    
+    echo "Testing ${NAME} config file..."
+
+    ${NGINX_BIN} -t -c ${NGINX_CONIFG}
+
+}
+
+#check
+
+case "$1" in 
+
+    test) 
+        config_test_fun
+        ;;
+    start) 
+
+        if ${statBin} -tnpl | grep -q ${NAME} ; then
+
+            echo "$NAME (pid `pidof $NAME`) is running.";exit 1;
+        fi
+
+        config_test_fun || exit 1
+
+        echo "Starting ${NAME}..."
+        ${NGINX_BIN} -c ${NGINX_CONIFG} && echo 'success' ||  echo "failed"
+        
+        ;;
+    stop) 
+
+        if ! ${statBin} -tnpl | grep -q ${NAME} ; then
+            echo "$NAME is not running.";exit 1;
+        fi
+        echo "Stopping ${NAME}..."
+        ${NGINX_BIN} -s stop && echo "success" || echo "failed"
+
+        ;;
+    status) 
+
+        if  ${statBin} -tnpl | grep -q ${NAME} ; then
+
+             echo "$NAME (pid `pidof $NAME`) is running.";
+        else
+            echo "$NAME is not running.";
+        fi
+       
+        ;;
+    restart)
+        $0 stop
+        sleep 1
+        $0 start
+        ;;
+    reload)
+        echo "Reload ${NAME} config file....";
+
+        ${NGINX_BIN} -s reload && echo "success"
+
+        ;;
+    kill)
+        echo "Kill ${NAME} process..."
+        kill $(cat ${PID}) && echo "success" || echo "failed"
+        ;;
+    *) 
+        echo "Usage: $0 {start|stop|restart|reload|status|test|kill}" && exit 1
+        ;;
+esac
