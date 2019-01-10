@@ -2,7 +2,7 @@
 #
 # Version 1
 
-FROM centos:latest
+FROM centos:base
 
 MAINTAINER studyboy <johngao@qq.com>
 
